@@ -2,11 +2,16 @@
 #define PARSER_H
 
 #include <string>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <algorithm>
 
-// Éú³Éµ¹ÅÅË÷Òı²¢·ÖÅú±£´æ
+// ç”Ÿæˆå€’æ’ç´¢å¼•å¹¶åˆ†æ‰¹ä¿å­˜
 void parseDocuments(const std::string& filePath);
 
-// ±£´æµ¹ÅÅË÷Òı
+// ä¿å­˜å€’æ’ç´¢å¼•
 void saveInvertedIndex(const std::string& outputFile);
 
+std::vector<std::string> tokenize(const std::string& text);
 #endif
