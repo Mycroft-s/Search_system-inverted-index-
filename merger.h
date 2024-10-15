@@ -4,11 +4,10 @@
 #include <string>
 #include <vector>
 
-// ¶ÁÈ¡²¢ºÏ²¢¶à¸öµ¹ÅÅË÷Òı
+// è¯»å–å¹¶åˆå¹¶å¤šä¸ªå€’æ’ç´¢å¼•
 void mergeInvertedIndexes(const std::vector<std::string>& indexFiles);
 
-// ÅÅĞò²¢È¥ÖØ
+// æ’åºå¹¶å»é‡
 void finalizeInvertedIndex();
-void saveFinalInvertedIndex(const std::string& outputFile);
+void saveMergedInvertedIndexAndGenerateLexicon(const std::string& outputFile, const std::string& lexiconFile);
 #endif
-
