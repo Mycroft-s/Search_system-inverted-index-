@@ -7,10 +7,25 @@
 #include <algorithm>
 #include <set>
 
-// µ¹ÅÅË÷ÒıÊı¾İ½á¹¹
+// å€’æ’ç´¢å¼•æ•°æ®ç»“æ„
 std::unordered_map<std::string, std::vector<int>> mergedIndex;
 
-// ¶ÁÈ¡µ¥¸öµ¹ÅÅË÷ÒıÎÄ¼ş²¢ºÏ²¢µ½Ö÷Ë÷ÒıÖĞ
+// VarByte ç¼–ç å‡½æ•°ï¼šå°†æ–‡æ¡£IDå‹ç¼©æˆå­—èŠ‚æµ
+void varByteEncode(int number, std::vector<uint8_t>& encodedBytes) {
+    while (true) {
+        uint8_t byte = number & 0x7F;  // å–æœ€ä½çš„7ä½
+        number >>= 7;
+        if (number == 0) {
+            encodedBytes.push_back(byte | 0x80);  // æœ€é«˜ä½è®¾ä¸º1è¡¨ç¤ºç»“æŸ
+            break;
+        }
+        else {
+            encodedBytes.push_back(byte);  // æœ€é«˜ä½ä¸º0ï¼Œè¡¨ç¤ºè¿˜æœ‰æ›´å¤šå­—èŠ‚
+        }
+    }
+}
+
+// è¯»å–å•ä¸ªå€’æ’ç´¢å¼•æ–‡ä»¶å¹¶åˆå¹¶åˆ°ä¸»ç´¢å¼•ä¸­
 void mergeInvertedIndexes(const std::vector<std::string>& indexFiles) {
     for (const std::string& filePath : indexFiles) {
         std::ifstream file(filePath);
@@ -26,7 +41,7 @@ void mergeInvertedIndexes(const std::vector<std::string>& indexFiles) {
             iss >> term;
 
             int docID;
-            // Ö±½Ó½«ÎÄµµID²åÈë¶ÔÓ¦µÄ´ÊÌõµÄµ¹ÅÅË÷ÒıÖĞ
+            // ç›´æ¥å°†æ–‡æ¡£IDæ’å…¥å¯¹åº”çš„è¯æ¡çš„å€’æ’ç´¢å¼•ä¸­
             while (iss >> docID) {
                 mergedIndex[term].push_back(docID);
             }
@@ -35,58 +50,65 @@ void mergeInvertedIndexes(const std::vector<std::string>& indexFiles) {
     }
 }
 
-// ¶ÔºÏ²¢ºóµÄµ¹ÅÅË÷Òı½øĞĞÅÅĞò²¢È¥ÖØ
+// å¯¹åˆå¹¶åçš„å€’æ’ç´¢å¼•è¿›è¡Œæ’åºå¹¶å»é‡
 void finalizeInvertedIndex() {
     for (auto& entry : mergedIndex) {
-        // Ê¹ÓÃ std::set ´úÌæÅÅĞòºÍÈ¥ÖØ
+        // ä½¿ç”¨ std::set ä»£æ›¿æ’åºå’Œå»é‡
         std::set<int> uniqueDocIDs(entry.second.begin(), entry.second.end());
-        entry.second.assign(uniqueDocIDs.begin(), uniqueDocIDs.end());  // ½«½á¹ûÖØĞÂ¸³Öµ»ØÏòÁ¿
+        entry.second.assign(uniqueDocIDs.begin(), uniqueDocIDs.end());  // å°†ç»“æœé‡æ–°èµ‹å€¼å›å‘é‡
     }
 }
 
-// VarByte ±àÂëº¯Êı£º½«ÎÄµµIDÑ¹Ëõ³É×Ö½ÚÁ÷
-void varByteEncode(int number, std::vector<uint8_t>& encodedBytes) {
-    while (true) {
-        uint8_t byte = number & 0x7F;  // È¡×îµÍµÄ7Î»
-        number >>= 7;
-        if (number == 0) {
-            encodedBytes.push_back(byte | 0x80);  // ×î¸ßÎ»ÉèÎª1±íÊ¾½áÊø
-            break;
-        }
-        else {
-            encodedBytes.push_back(byte);  // ×î¸ßÎ»Îª0£¬±íÊ¾»¹ÓĞ¸ü¶à×Ö½Ú
-        }
-    }
-}
-
-// ±£´æ×îÖÕµÄµ¹ÅÅË÷Òıµ½¶ş½øÖÆÎÄ¼ş£¨Ê¹ÓÃ VarByte ±àÂë£©
-void saveFinalInvertedIndex(const std::string& outputFile) {
-    std::ofstream outFile(outputFile, std::ios::binary);  // ÒÔ¶ş½øÖÆÄ£Ê½´ò¿ªÎÄ¼ş
+// åœ¨åˆå¹¶è¿‡ç¨‹ä¸­ç”Ÿæˆ Lexicon
+void saveMergedInvertedIndexAndGenerateLexicon(const std::string& outputFile, const std::string& lexiconFile) {
+    std::ofstream outFile(outputFile, std::ios::binary);  // ä»¥äºŒè¿›åˆ¶æ¨¡å¼æ‰“å¼€å€’æ’ç´¢å¼•æ–‡ä»¶
     if (!outFile.is_open()) {
-        std::cerr << "Error: Unable to open file for writing: " << outputFile << std::endl;
+        std::cerr << "Error: Unable to open output file for writing: " << outputFile << std::endl;
         return;
     }
 
+    std::ofstream lexiconOut(lexiconFile);  // æ‰“å¼€è¯å…¸æ–‡ä»¶
+    if (!lexiconOut.is_open()) {
+        std::cerr << "Error: Unable to open lexicon file for writing: " << lexiconFile << std::endl;
+        return;
+    }
+
+    int64_t currentOffset = 0;  // ç”¨äºè®°å½•å½“å‰å€’æ’åˆ—è¡¨åœ¨æ–‡ä»¶ä¸­çš„åç§»é‡
+
+    // éå†å·²åˆå¹¶çš„å€’æ’ç´¢å¼•
     for (const auto& entry : mergedIndex) {
-        // Ğ´Èë´ÊÌõ
-        size_t termSize = entry.first.size();
-        outFile.write(reinterpret_cast<const char*>(&termSize), sizeof(size_t));  // Ğ´Èë´ÊÌõ³¤¶È
-        outFile.write(entry.first.c_str(), termSize);  // Ğ´Èë´ÊÌõ±¾Éí
+        const std::string& term = entry.first;
+        const std::vector<int>& docIDs = entry.second;
 
-        // ¶ÔÃ¿¸öÎÄµµID½øĞĞ VarByte ±àÂë²¢Ğ´ÈëÎÄ¼ş
-        size_t numDocIDs = entry.second.size();
-        outFile.write(reinterpret_cast<const char*>(&numDocIDs), sizeof(size_t));  // Ğ´ÈëÎÄµµIDÊıÁ¿
+        // å†™å…¥è¯æ¡åˆ°å€’æ’ç´¢å¼•æ–‡ä»¶
+        size_t termSize = term.size();
+        outFile.write(reinterpret_cast<const char*>(&termSize), sizeof(size_t));  // å†™å…¥è¯æ¡é•¿åº¦
+        outFile.write(term.c_str(), termSize);  // å†™å…¥è¯æ¡
 
-        // Ê¹ÓÃÒ»¸öÔ¤ÏÈ·ÖÅäµÄÏòÁ¿À´´æ´¢±àÂëºóµÄ×Ö½Ú
+        // å†™å…¥æ–‡æ¡£IDæ•°é‡
+        size_t numDocIDs = docIDs.size();
+        outFile.write(reinterpret_cast<const char*>(&numDocIDs), sizeof(size_t));  // å†™å…¥æ–‡æ¡£IDæ•°é‡
+
+        // å¯¹æ–‡æ¡£IDè¿›è¡Œ VarByte ç¼–ç 
         std::vector<uint8_t> encodedBytes;
-        for (int docID : entry.second) {
+        for (int docID : docIDs) {
             varByteEncode(docID, encodedBytes);
         }
-        // Ò»´ÎĞÔĞ´Èë±àÂëºóµÄ×Ö½Ú
-        outFile.write(reinterpret_cast<const char*>(encodedBytes.data()), encodedBytes.size());
+        outFile.write(reinterpret_cast<const char*>(encodedBytes.data()), encodedBytes.size());  // å†™å…¥ç¼–ç åçš„å­—èŠ‚
+
+        // æ›´æ–°è¯å…¸ï¼Œè®°å½•è¯æ¡å¯¹åº”çš„åç§»é‡å’Œå€’æ’åˆ—è¡¨çš„å­—èŠ‚é•¿åº¦
+        int64_t newOffset = outFile.tellp();  // è·å–å½“å‰å†™å…¥ä½ç½®ä½œä¸ºæ–°çš„åç§»é‡
+        int32_t length = static_cast<int32_t>(newOffset - currentOffset);  // è®¡ç®—å€’æ’åˆ—è¡¨çš„é•¿åº¦
+
+        // å°†è¯æ¡åŠå…¶å¯¹åº”çš„åç§»é‡å’Œé•¿åº¦å†™å…¥è¯å…¸
+        lexiconOut << term << " " << currentOffset << " " << length << std::endl;
+
+        // æ›´æ–°å½“å‰åç§»é‡
+        currentOffset = newOffset;
     }
 
     outFile.close();
-    std::cout << "[INFO] Final compressed inverted index saved to " << outputFile << std::endl;
+    lexiconOut.close();
+    std::cout << "[INFO] Merged inverted index and lexicon generated." << std::endl;
 }
 
