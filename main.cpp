@@ -3,31 +3,40 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include "query.h"  
 
 int main() {
-    /*
-    // µÚÒ»²½£ºÉú³Éµ¹ÅÅË÷Òı
+    
+    // ç¬¬ä¸€æ­¥ï¼šç”Ÿæˆå€’æ’ç´¢å¼•,page table
     std::string inputFilePath = "C:\\Users\\Admin\\Desktop\\web search\\week4-6\\collection\\collection.tsv";
     parseDocuments(inputFilePath);
-*/
-    // µÚ¶ş²½£ººÏ²¢µ¹ÅÅË÷Òı
-    // ¶¯Ì¬Éú³ÉÎÄ¼şÃû²¢Ìí¼Óµ½ indexFiles ÁĞ±íÖĞ
+
+    // ç¬¬äºŒæ­¥ï¼šåˆå¹¶å€’æ’ç´¢å¼•
+    // åŠ¨æ€ç”Ÿæˆæ–‡ä»¶åå¹¶æ·»åŠ åˆ° indexFiles åˆ—è¡¨ä¸­
     std::vector<std::string> indexFiles;
     for (int i = 100000; i <= 8800000; i += 100000) {
         std::string fileName = "C:\\Users\\Admin\\Desktop\\web search\\week4-6\\index\\inverted_index_" + std::to_string(i) + ".txt";
         indexFiles.push_back(fileName);
     }
 
-    // Ìí¼Ó×îºóµÄÎÄ¼ş inverted_index_final.txt
+    // æ·»åŠ æœ€åçš„æ–‡ä»¶ inverted_index_final.txt
     indexFiles.push_back("C:\\Users\\Admin\\Desktop\\web search\\week4-6\\index\\inverted_index_final.txt");
 
+    // åˆå¹¶åçš„å€’æ’ç´¢å¼•å’Œè¯å…¸æ–‡ä»¶è·¯å¾„
+    std::string outputInvertedIndexFile = "C:\\Users\\Admin\\Desktop\\web search\\week4-6\\index\\final_inverted_index.bin";
+    std::string outputLexiconFile = "C:\\Users\\Admin\\Desktop\\web search\\week4-6\\index\\lexicon.txt";
 
+    // åˆå¹¶å€’æ’ç´¢å¼•å¹¶ç”Ÿæˆè¯å…¸
     mergeInvertedIndexes(indexFiles);
-
     finalizeInvertedIndex();
-    saveFinalInvertedIndex("C:\\Users\\Admin\\Desktop\\web search\\week4-6\\index\\final_inverted_index.bin");
+    saveMergedInvertedIndexAndGenerateLexicon(outputInvertedIndexFile, outputLexiconFile);
 
     std::cout << "Inverted index generation and merging completed successfully!" << std::endl;
+
+
+
+	// ç¬¬ä¸‰æ­¥ï¼šå¤„ç†æŸ¥è¯¢
+	startQueryProcessor();
 
     return 0;
 }
